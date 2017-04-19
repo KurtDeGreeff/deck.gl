@@ -23,6 +23,13 @@ import {GL, glContextWithState} from 'luma.gl';
 import {getUniformsFromViewport} from './viewport-uniforms';
 import {log, getBlendMode, setBlendMode} from './utils';
 
+const INTERACTION_END_EVENTS = [
+  'mouseup',
+  'dragend',
+  'touchend',
+  'keydown',
+  'keyup'
+];
 const EMPTY_PIXEL = new Uint8Array(4);
 let renderCount = 0;
 
@@ -149,6 +156,14 @@ export function pickLayers(gl, {
       // Update layer manager context
       lastPickedInfo.layerId = pickedLayerId;
       lastPickedInfo.index = pickedObjectIndex;
+    } else if (pickedLayer === null && INTERACTION_END_EVENTS.indexOf(mode) !== -1) {
+      // on input events that signal the end of an interaction,
+      // there may be no picked layer under the mouse at the end of the interaction.
+      // in this case, fall back to the root layer.
+      // note that not all of these events are currently implemented in deck.gl.
+      const {layerId} = lastPickedInfo;
+      const lastPickedLayer = layers.find(l => l.props.id === layerId);
+      affectedLayers.push(lastPickedLayer);
     }
 
     const baseInfo = createInfo([x, y], viewport);
@@ -204,9 +219,13 @@ export function pickLayers(gl, {
 
       // Therefore, calls to functions like onClick and onHover need to be done
       // at the end of the function. NO operation relies on the states of current
-      // layers should be called after this two lines of code.
+      // layers should be called after this code.
       switch (mode) {
       case 'click': handled = info.layer.props.onClick(info); break;
+      case 'dragstart': handled = info.layer.props.onDragStart(info); break;
+      case 'dragmove': handled = info.layer.props.onDragMove(info); break;
+      case 'dragend': handled = info.layer.props.onDragEnd(info); break;
+      case 'dragcancel': handled = info.layer.props.onDragCancel(info); break;
       case 'hover': handled = info.layer.props.onHover(info); break;
       default: throw new Error('unknown pick type');
       }
