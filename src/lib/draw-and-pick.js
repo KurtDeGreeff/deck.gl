@@ -100,9 +100,11 @@ export function pickLayers(gl, {
       // e.g. to enable dragging behaviors.
       const {layerId} = lastPickedInfo;
       pickedLayer = layers.find(l => l.props.id === layerId);
-      pickedColor = lastPickedInfo.color;
-      pickedObjectIndex = lastPickedInfo.index;
-      affectedLayers.push(pickedLayer);
+      if (pickedLayer) {
+        pickedColor = lastPickedInfo.color;
+        pickedObjectIndex = lastPickedInfo.index;
+        affectedLayers.push(pickedLayer);
+      }
     } else {
       // Picking process start
       // Clear the frame buffer
